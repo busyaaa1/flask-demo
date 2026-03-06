@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Viscous Galactic Artifacts</title>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #010103; }
+        canvas { display: block; }
+        #ui {
+            position: absolute;
+            top: 25px; left: 25px;
+            color: #d1d1ff;
+            font-family: 'Inter', sans-serif;
+            font-size: 10px;
+            letter-spacing: 3px;
+            pointer-events: none;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="ui">Status: High_Viscosity_Active // Submersion: 100%</div>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        class DeepSpace {
+            constructor() {
+                this.scene = new THREE.Scene();
+                this.camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 2000);
+                this.renderer = new THREE.WebGLRenderer({ antialias: true });
+                this.objects = [];
+
+                this.init();
+                this.createLights();
+                this.addDiverseShapes();
+                this.animate();
+            }
+
+            init() {
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+                this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+                // Настройка для сочных цветов и реалистичного света
+                this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+                this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+                document.body.appendChild(this.renderer.domElement);
+
+                this.camera.position.set(20, 20, 40);
+                this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+                this.controls.enableDamping = true;
+                this.controls.dampingFactor = 0.03;
+
+                window.addEventListener('resize', () => {
+                    this.camera.aspect = window.innerWidth / window.innerHeight;
+                    this.camera.updateProjectionMatrix();
+                    this.renderer.setSize(window.innerWidth, window.innerHeight);
+                });
+            }
+
+            createLights() {
+                // Основные мощные источники для "жирных" бликов
+                const lights = [
+                    { color: 0xff0088, pos: [30, 30, 30], int: 2000 },
+                    { color: 0x00ffff, pos: [-30, -30, 30], int: 2000 },
+                    { color: 0xffffff, pos: [0, 0, -50], int: 1000 }
+                ];
+
+                lights.forEach(l => {
+                    const light = new THREE.PointLight(l.color, l.int);
+                    light.position.set(...l.pos);
+                    this.scene.add(light);
+                });
+
+                this.scene.add(new THREE.AmbientLight(0x404040, 1));
+            }
+
+            // Создаем странные математические формы
+            getCustomGeometries() {
+                const points = [];
+                for ( let i = 0; i < 10; i ++ ) {
+                    points.push( new THREE.Vector2( Math.sin( i * 0.2 ) * 2 + 1, ( i - 5 ) * 2 ) );
+                }
+
+                return [
+                    new THREE.TorusKnotGeometry(1, 0.4, 200, 32, 2, 3), // Узел
+                    new THREE.TorusKnotGeometry(1.2, 0.2, 200, 32, 7, 3), // "Острый" узел
+                    new THREE.DodecahedronGeometry(1.5, 0), // Многогранник
+                    new THREE.IcosahedronGeometry(1.5, 5), // Идеальная сфера
+                    new THREE.LatheGeometry(points, 32), // Странная "ваза"
+                    new THREE.CapsuleGeometry(0.7, 2, 20, 32), // Капсула
+                    new THREE.TorusGeometry(1.5, 0.5, 16, 100) // Бублик
+                ];
+            }
+
+            addDiverseShapes() {
+                const geometries = this.getCustomGeometries();
+
+                for (let i = 0; i < 300; i++) {
+                    const geo = geometries[Math.floor(Math.random() * geometries.length)];
+                    
+                    // Эффект "максимальной влажности"
+                    const mat = new THREE.MeshPhysicalMaterial({
+                        color: new THREE.Color().setHSL(Math.random(), 0.7, 0.5),
+                        metalness: 0.0,
+                        roughness: 0.01,
+                        transmission: 0.5, // Прозрачность
+                        thickness: 3.0,    // Толщина стекла
+                        ior: 1.5,          // Индекс преломления
+                        clearcoat: 1.0,    // Лак
+                        clearcoatRoughness: 0.0,
+                        iridescence: 1.0,  // Переливы
+                        sheen: 1.0,
+                        sheenColor: 0xffffff
+                    });
+
+                    const mesh = new THREE.Mesh(geo, mat);
+                    
+                    // Случайное положение в большом объеме
+                    mesh.position.set(
+                        (Math.random() - 0.5) * 100,
+                        (Math.random() - 0.5) * 100,
+                        (Math.random() - 0.5) * 100
+                    );
+
+                    // Разный размер для глубины сцены
+                    const scale = Math.random() * 2.5 + 0.2;
+                    mesh.scale.set(scale, scale, scale);
+                    
+                    // Индивидуальные параметры вращения
+                    this.objects.push({
+                        mesh: mesh,
+                        rotX: (Math.random() - 0.5) * 0.005,
+                        rotY: (Math.random() - 0.5) * 0.005,
+                        pulse: Math.random() * Math.PI
+                    });
+
+                    this.scene.add(mesh);
+                }
+            }
+
+            animate() {
+                requestAnimationFrame(() => this.animate());
+                const time = performance.now() * 0.0005;
+
+                this.objects.forEach(obj => {
+                    // Медленное, вязкое вращение
+                    obj.mesh.rotation.x += obj.rotX;
+                    obj.mesh.rotation.y += obj.rotY;
+
+                    // Плавное покачивание
+                    const s = 1 + Math.sin(time + obj.pulse) * 0.1;
+                    obj.mesh.position.y += Math.sin(time + obj.pulse) * 0.01;
+                });
+
+                this.controls.update();
+                this.renderer.render(this.scene, this.camera);
+            }
+        }
+
+        new DeepSpace();
+    </script>
+</body>
+</html>
